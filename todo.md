@@ -13,6 +13,8 @@ Derived from [specification.md](specification.md). Milestones are ordered so eac
 
 ## Milestone 1: Core Data Model
 
+> Convention: apply all schema changes as `infra/supabase/migrations/*.sql` files via `supabase db push`, not the dashboard SQL Editor, so local migration history stays in sync with the remote project (see `0001_admins.sql` for the reconciliation this avoids).
+
 - [ ] Create ingestion tables: raw stories, canonical clustered stories. **Test:** inserting two similarly-worded raw stories and clustering them results in one canonical story row.
 - [ ] Create daily top-story selection metadata table. **Test:** a day's top-5 selection can be queried by date and returns exactly 5 ranked rows.
 - [ ] Create Round 1 clue tables (variants, edit history). **Test:** editing a clue via SQL/admin API preserves the prior version in history.
