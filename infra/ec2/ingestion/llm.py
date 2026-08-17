@@ -44,15 +44,21 @@ class LLMClient:
                 "happened without naming the specific people/places/organisation involved."
             ),
             "redacted_headline": (
-                "Rewrite this headline with the key identifying names/places/organisations "
-                "replaced by blanks (e.g. '____'), keeping the rest of the wording intact."
+                "Rewrite ONLY the headline below with the key identifying names/places/"
+                "organisations replaced by blanks (e.g. '____'), keeping the rest of the "
+                "wording intact. Ignore the summary; it's background context only."
             ),
             "keyword_cluster": (
                 "Produce 4-6 short keywords or phrases (comma separated) that hint at this "
                 "story's topic without naming the specific people/places/organisation involved."
             ),
         }
-        system = f"{_SAFETY_RULES}\nRespond as JSON: {{\"content\": \"...\"}}"
+        system = (
+            f"{_SAFETY_RULES}\n"
+            'Respond as JSON: {"content": "..."}. The "content" value must be ONLY the '
+            "requested text itself -- no labels like 'Headline:' or 'Summary:', no "
+            "restating the input, no extra commentary."
+        )
         user = f"{prompts[clue_type]}\n\nHeadline: {headline}\nSummary: {summary or ''}"
         return self._json_completion(system, user)["content"]
 
