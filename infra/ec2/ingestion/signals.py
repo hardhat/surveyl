@@ -19,13 +19,15 @@ SOCIAL_ENGAGEMENT_STUB_VALUE = 0.0
 
 def search_spike_score(query, timeframe="now 1-d", geo="GB"):
     """0-100 relative search interest for `query` over the given window, per Google
-    Trends. Returns 0.0 on any failure (network, rate limit, no data) rather than
-    raising, since this is a best-effort secondary ranking signal.
+    Trends. Returns 0.0 on any failure (network, rate limit, no data, or timeout)
+    rather than raising, since this is a best-effort secondary ranking signal.
     """
     try:
         from pytrends.request import TrendReq
 
-        pytrends = TrendReq(hl="en-GB", tz=0)
+        # (connect, read) timeout -- pytrends/requests has no default, so a stalled
+        # connection would otherwise hang this call (and the whole ingestion run).
+        pytrends = TrendReq(hl="en-GB", tz=0, timeout=(5, 10))
         pytrends.build_payload([query], timeframe=timeframe, geo=geo)
         data = pytrends.interest_over_time()
         if data.empty:

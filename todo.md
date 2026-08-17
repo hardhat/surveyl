@@ -27,18 +27,18 @@ Derived from [specification.md](specification.md). Milestones are ordered so eac
 
 ## Milestone 2: News Ingestion Pipeline (EC2 Python Cron)
 
-- [ ] Implement source whitelist config for curated UK national outlets. **Test:** ingestion run only pulls from configured sources, confirmed via log/output inspection.
-- [ ] Implement raw story fetch job. **Test:** running the job populates the raw stories table with today's articles.
-- [ ] Implement deduplication/clustering (headline similarity, keywords, named entities). **Test:** feeding 5 known duplicate headlines produces 1 canonical story.
-- [ ] Implement weighted ranking (coverage volume > search spikes > social engagement). **Test:** unit test with fixed synthetic inputs produces the expected rank order.
-- [ ] Implement top-5 selection + decoy generation (12 candidates, 5 correct, plausible decoys). **Test:** a completed run produces exactly 12 Round 1 candidates with exactly 5 flagged correct.
-- [ ] Implement clue generation (satirical summary, redacted headline, keyword cluster) via LLM call. **Test:** each of the 5 top stories has at least one generated clue in the DB after a run.
-- [ ] Implement Round 3 candidate question generation (3 candidates per next-day story). **Test:** after a run, each of the day's 5 stories has exactly 3 Round 3 candidate questions.
-- [ ] Implement Round 2 canonical selection logic (lowest skip rate → highest answers → random tiebreak) as a scheduled job/function. **Test:** feeding synthetic skip/answer data selects the expected winning candidate; tie case resolves via random with a fixed seed test.
-- [ ] Implement promotion/expiry logic (winning Round 3 question becomes tomorrow's Round 2 question if its story makes top 5; otherwise discarded). **Test:** simulate a story making vs. not making tomorrow's top 5 and confirm correct promotion/discard behavior.
-- [ ] Enforce the 3:30am ingestion freeze and 6:00am publish schedule via cron timing. **Test:** cron schedule entries match 3:30am and 6:00am UK time (including BST/GMT handling).
-- [ ] Implement ingestion failure fallback (serve previous day's game + warning banner, no fallback badge, no replay). **Test:** simulate ingestion failure and confirm the API/game package returns yesterday's content with a warning flag.
-- [ ] Implement late-success override (replace fallback with real game after 6am, let in-progress fallback sessions finish). **Test:** simulate late ingestion success after a fallback session started; confirm new sessions get today's game while the started session can still complete.
+- [x] Implement source whitelist config for curated UK national outlets. **Test:** ingestion run only pulls from configured sources, confirmed via log/output inspection.
+- [x] Implement raw story fetch job. **Test:** running the job populates the raw stories table with today's articles.
+- [x] Implement deduplication/clustering (headline similarity, keywords, named entities). **Test:** feeding 5 known duplicate headlines produces 1 canonical story.
+- [x] Implement weighted ranking (coverage volume > search spikes > social engagement). **Test:** unit test with fixed synthetic inputs produces the expected rank order.
+- [x] Implement top-5 selection + decoy generation (12 candidates, 5 correct, plausible decoys). **Test:** a completed run produces exactly 12 Round 1 candidates with exactly 5 flagged correct.
+- [x] Implement clue generation (satirical summary, redacted headline, keyword cluster) via LLM call. **Test:** each of the 5 top stories has at least one generated clue in the DB after a run.
+- [x] Implement Round 3 candidate question generation (3 candidates per next-day story). **Test:** after a run, each of the day's 5 stories has exactly 3 Round 3 candidate questions.
+- [x] Implement Round 2 canonical selection logic (lowest skip rate → highest answers → random tiebreak) as a scheduled job/function. **Test:** feeding synthetic skip/answer data selects the expected winning candidate; tie case resolves via random with a fixed seed test.
+- [x] Implement promotion/expiry logic (winning Round 3 question becomes tomorrow's Round 2 question if its story makes top 5; otherwise discarded). **Test:** simulate a story making vs. not making tomorrow's top 5 and confirm correct promotion/discard behavior.
+- [x] Enforce the 3:30am ingestion freeze and 6:00am publish schedule via cron timing. **Test:** cron schedule entries match 3:30am and 6:00am UK time (including BST/GMT handling).
+- [x] Implement ingestion failure fallback (serve previous day's game + warning banner, no fallback badge, no replay). **Test:** simulate ingestion failure and confirm the API/game package returns yesterday's content with a warning flag.
+- [x] Implement late-success override (replace fallback with real game after 6am, let in-progress fallback sessions finish). **Test:** simulate late ingestion success after a fallback session started; confirm new sessions get today's game while the started session can still complete.
 
 ## Milestone 3: Admin Dashboard (EC2-hosted)
 

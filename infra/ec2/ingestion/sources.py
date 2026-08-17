@@ -5,10 +5,21 @@ import logging
 from datetime import datetime, timedelta
 
 import feedparser
+import requests
 
 from .config import SOURCE_WHITELIST, UK_TZ
 
 logger = logging.getLogger(__name__)
+
+FEED_FETCH_TIMEOUT_SECONDS = 10
+# Some outlets block requests without a browser-like User-Agent (seen: 401/403/405
+# from a bare "python-requests" UA even on otherwise-public RSS feeds).
+FEED_FETCH_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36 SurveyleIngestionBot/1.0"
+    )
+}
 
 
 def _entry_published_at(entry):
@@ -30,7 +41,18 @@ def fetch_raw_articles(news_window_start, news_window_end, sources=None):
     sources = sources if sources is not None else SOURCE_WHITELIST
     articles = []
     for source_name, feed_url in sources.items():
-        feed = feedparser.parse(feed_url)
+        try:
+            response = requests.get(
+                feed_url, timeout=FEED_FETCH_TIMEOUT_SECONDS, headers=FEED_FETCH_HEADERS
+            )
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            logger.warning("feed fetch failed for %s (%s): %s", source_name, feed_url, exc)
+            continue
+
+        # feedparser.parse() never touches the network here -- we already fetched the
+        # bytes above with a timeout, since feedparser's own fetch has none and can hang.
+        feed = feedparser.parse(response.content)
         if feed.bozo:
             logger.warning("feed error for %s (%s): %s", source_name, feed_url, feed.bozo_exception)
             continue

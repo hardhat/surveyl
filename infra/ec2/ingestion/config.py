@@ -16,14 +16,15 @@ PUBLISH_MINUTE = 0
 
 # Curated whitelist of major UK national news outlets (public RSS feeds, no API key
 # required). Flexible source count per spec 12.2 -- add/remove entries freely.
+# Confirmed working via a live fetch (with a browser-like User-Agent, see sources.py).
+# Reuters retired its public RSS feeds; ITV News's RSS endpoint didn't respond -- both
+# excluded until a working replacement is confirmed, rather than guessing a URL.
 SOURCE_WHITELIST = {
     "BBC News": "https://feeds.bbci.co.uk/news/uk/rss.xml",
     "The Guardian": "https://www.theguardian.com/uk/rss",
     "Sky News": "https://feeds.skynews.com/feeds/rss/uk.xml",
     "The Independent": "https://www.independent.co.uk/news/uk/rss",
-    "The Telegraph": "https://www.telegraph.co.uk/news/rss.xml",
-    "ITV News": "https://www.itv.com/news/index.rss",
-    "Reuters UK": "https://www.reuters.com/world/uk/rss",
+    "The Telegraph": "https://www.telegraph.co.uk/rss.xml",
 }
 
 # Ranking signal priority per spec 12.3: coverage volume > search spikes > social
