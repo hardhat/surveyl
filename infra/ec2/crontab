@@ -1,0 +1,17 @@
+# Surveyle daily ingestion cron schedule. Install with: crontab infra/ec2/crontab
+# CRON_TZ makes these wall-clock UK times regardless of BST/GMT (spec 5.1/5.3).
+CRON_TZ=Europe/London
+SHELL=/bin/bash
+SURVEYLE_HOME=/opt/surveyle
+
+# 3:30am: ingestion freeze + daily assembly (fetch, cluster, rank, select, generate).
+30 3 * * * cd $SURVEYLE_HOME && venv/bin/python -m infra.ec2.ingestion.run_daily assemble >> /var/log/surveyle/ingestion.log 2>&1
+
+# 6:00am: publish cutoff -- marks today's game published, or fallback if not ready.
+0 6 * * * cd $SURVEYLE_HOME && venv/bin/python -m infra.ec2.ingestion.run_daily publish >> /var/log/surveyle/ingestion.log 2>&1
+
+# Every 15 min after publish: catch late ingestion success and flip fallback->published.
+*/15 6-23 * * * cd $SURVEYLE_HOME && venv/bin/python -m infra.ec2.ingestion.run_daily late-check >> /var/log/surveyle/ingestion.log 2>&1
+
+# Existing Supabase keep-alive heartbeat.
+*/20 * * * * venv/bin/python $SURVEYLE_HOME/infra/ec2/heartbeat.py >> /var/log/surveyle/heartbeat.log 2>&1
