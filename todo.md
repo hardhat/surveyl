@@ -4,26 +4,26 @@ Derived from [specification.md](specification.md). Milestones are ordered so eac
 
 ## Milestone 0: Infrastructure Foundations
 
-- [ ] Provision Supabase project (PostgreSQL, Auth, Edge Functions enabled). **Test:** can connect via `supabase-js` and run a trivial `select 1` query.
-- [ ] Provision AWS EC2 instance with Nginx, Python runtime, and a process manager (e.g. systemd/cron). **Test:** EC2 serves a static "hello world" page over HTTP/HTTPS.
-- [ ] Enable Supabase Anonymous Auth. **Test:** calling `signInAnonymously()` from a test script returns a valid session/JWT with a `uid`.
-- [ ] Create `admins` table + Supabase email/password auth for a single admin user. **Test:** admin can log in; a non-admin anonymous user is rejected by an RLS policy referencing `admins`.
-- [ ] Configure service-role key usage on EC2 only (never shipped to the SPA bundle). **Test:** grep built frontend bundle for the service-role key string and confirm it is absent.
-- [ ] Set up an EC2 cron heartbeat that pings Supabase on a schedule. **Test:** Supabase project logs show a query at the expected interval and does not auto-pause after 7+ days.
+- [x] Provision Supabase project (PostgreSQL, Auth, Edge Functions enabled). **Test:** can connect via `supabase-js` and run a trivial `select 1` query.
+- [x] Provision AWS EC2 instance with Nginx, Python runtime, and a process manager (e.g. systemd/cron). **Test:** EC2 serves a static "hello world" page over HTTP/HTTPS.
+- [x] Enable Supabase Anonymous Auth. **Test:** calling `signInAnonymously()` from a test script returns a valid session/JWT with a `uid`.
+- [x] Create `admins` table + Supabase email/password auth for a single admin user. **Test:** admin can log in; a non-admin anonymous user is rejected by an RLS policy referencing `admins`.
+- [x] Configure service-role key usage on EC2 only (never shipped to the SPA bundle). **Test:** grep built frontend bundle for the service-role key string and confirm it is absent.
+- [x] Set up an EC2 cron heartbeat that pings Supabase on a schedule. **Test:** Supabase project logs show a query at the expected interval and does not auto-pause after 7+ days.
 
 ## Milestone 1: Core Data Model
 
 > Convention: apply all schema changes as `infra/supabase/migrations/*.sql` files via `supabase db push`, not the dashboard SQL Editor, so local migration history stays in sync with the remote project (see `0001_admins.sql` for the reconciliation this avoids).
 
-- [ ] Create ingestion tables: raw stories, canonical clustered stories. **Test:** inserting two similarly-worded raw stories and clustering them results in one canonical story row.
-- [ ] Create daily top-story selection metadata table. **Test:** a day's top-5 selection can be queried by date and returns exactly 5 ranked rows.
-- [ ] Create Round 1 clue tables (variants, edit history). **Test:** editing a clue via SQL/admin API preserves the prior version in history.
-- [ ] Create Round 2 canonical question table. **Test:** a question row links to exactly one story and one day.
-- [ ] Create Round 3 candidate question + variant assignment tables. **Test:** a story has exactly 3 candidates; assigning a player produces exactly 1 variant per story per player.
-- [ ] Create player attempt state table (per-round progress, cookie/anon id, day). **Test:** two attempts from the same anon id on the same day are rejected by a unique constraint/RLS policy.
-- [ ] Create poll responses + analytics aggregate tables. **Test:** submitting 3 responses to one question updates an aggregate count via trigger or query.
-- [ ] Write RLS policies for all player-facing tables (read own attempt, write own attempt, no cross-player access). **Test:** anon user A cannot read or write anon user B's attempt row (verified via two separate anon sessions).
-- [ ] Write RLS bypass policies for service-role (EC2 ingestion/admin) access. **Test:** EC2 service-role client can insert/update any row regardless of RLS.
+- [x] Create ingestion tables: raw stories, canonical clustered stories. **Test:** inserting two similarly-worded raw stories and clustering them results in one canonical story row.
+- [x] Create daily top-story selection metadata table. **Test:** a day's top-5 selection can be queried by date and returns exactly 5 ranked rows.
+- [x] Create Round 1 clue tables (variants, edit history). **Test:** editing a clue via SQL/admin API preserves the prior version in history.
+- [x] Create Round 2 canonical question table. **Test:** a question row links to exactly one story and one day.
+- [x] Create Round 3 candidate question + variant assignment tables. **Test:** a story has exactly 3 candidates; assigning a player produces exactly 1 variant per story per player.
+- [x] Create player attempt state table (per-round progress, cookie/anon id, day). **Test:** two attempts from the same anon id on the same day are rejected by a unique constraint/RLS policy.
+- [x] Create poll responses + analytics aggregate tables. **Test:** submitting 3 responses to one question updates an aggregate count via trigger or query.
+- [x] Write RLS policies for all player-facing tables (read own attempt, write own attempt, no cross-player access). **Test:** anon user A cannot read or write anon user B's attempt row (verified via two separate anon sessions).
+- [x] Write RLS bypass policies for service-role (EC2 ingestion/admin) access. **Test:** EC2 service-role client can insert/update any row regardless of RLS.
 
 ## Milestone 2: News Ingestion Pipeline (EC2 Python Cron)
 
