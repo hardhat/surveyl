@@ -69,3 +69,71 @@ Version B: The Admin / AI-Assisted Approach
 
     Cons: Higher administrative overhead or reliance on external LLM API stability.
 
+## Deployment
+
+Everything server-side lives on a single EC2 host (`ubuntu@surveyle.co.uk`, Ubuntu, Apache2 + PHP + Python) at `/opt/surveyle`, alongside a Supabase project. There are two independently deployable pieces:
+
+- `infra/ec2/ingestion/` -- Python cron pipeline (news ingestion, ranking, daily assembly). Runs out of `/opt/surveyle/venv` per `infra/ec2/crontab`.
+- `infra/ec2/admin/` -- plain-PHP admin dashboard (no framework/Composer deps). Apache serves `infra/ec2/admin/public` as its document root/alias; `src/`, `tests/`, and `templates/` sit outside the web root and are never directly reachable over HTTP.
+
+Both read secrets from `/etc/surveyle/surveyle.env` (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENAI_API_KEY`). Keep that file to *only* those four keys -- it's readable by both the `ubuntu` user (cron) and, via the `surveyle` group, the `www-data` user (Apache/PHP), so treat any addition to it as a deliberate, audited change.
+
+### Local staging before deploying
+
+Always run both test suites locally first, and use the PHP built-in server to click through the admin UI by hand before touching the production host:
+
+```bash
+# Python ingestion pipeline
+source venv/bin/activate && python -m pytest infra/ec2/tests/ -q
+
+# PHP admin dashboard
+(cd infra/ec2/admin && phpunit)
+
+# Manually click through the admin UI against a local/dev Supabase project:
+#   cp /path/to/a/dev/surveyle.env /tmp/surveyle.env   # dev project's keys, never prod's
+#   sudo mkdir -p /etc/surveyle && sudo cp /tmp/surveyle.env /etc/surveyle/surveyle.env
+php -S localhost:8080 -t infra/ec2/admin/public
+# then open http://localhost:8080/login.php
+```
+
+Only proceed to the deploy steps below once both suites are green and (for admin dashboard changes) you've smoke-tested the affected pages locally.
+
+### Deploying
+
+The EC2 host doesn't currently have a GitHub deploy key configured, so today's deploy procedure is an additive `rsync` of the working tree (never `--delete`, to avoid clobbering anything already on the host that isn't tracked in this repo, e.g. the standalone `heartbeat.py` cron job). Once a read-only deploy key is added to the repo and to the host's `~/.ssh`, prefer switching this to `git pull` on the server for a fully reproducible deploy.
+
+```bash
+# 1. Make sure both test suites pass locally (see "Local staging" above).
+
+# 2. Sync the repo to the server additively (no --delete).
+rsync -avz \
+  --exclude='.git' --exclude='venv' --exclude='.venv' --exclude='node_modules' \
+  --exclude='__pycache__' --exclude='*/__pycache__' --exclude='.pytest_cache' \
+  --exclude='.phpunit.result.cache' --exclude='infra/supabase/.temp' \
+  -e ssh --rsync-path="sudo rsync" \
+  ./ ubuntu@surveyle.co.uk:/opt/surveyle/
+
+# 3. First deploy only: create the venv and install ingestion deps.
+ssh ubuntu@surveyle.co.uk '
+  cd /opt/surveyle && python3 -m venv venv &&
+  venv/bin/pip install -q -r infra/ec2/requirements.txt
+'
+# Later deploys, if requirements.txt changed:
+ssh ubuntu@surveyle.co.uk 'cd /opt/surveyle && venv/bin/pip install -q -r infra/ec2/requirements.txt'
+
+# 4. Re-run both suites on the server itself as a final sanity check.
+ssh ubuntu@surveyle.co.uk '
+  cd /opt/surveyle &&
+  venv/bin/python -m pytest infra/ec2/tests/ -q &&
+  (cd infra/ec2/admin && phpunit)
+'
+
+# 5. Apache config only needs touching when infra/ec2/admin/surveyle-admin.conf
+# (or the Alias block in /etc/apache2/sites-available/surveyle.co.uk-le-ssl.conf)
+# changes -- otherwise step 2 alone is enough, since PHP is interpreted directly
+# from the synced files and Apache doesn't need a reload for code-only changes.
+ssh ubuntu@surveyle.co.uk 'sudo apache2ctl configtest && sudo systemctl reload apache2'
+```
+
+The admin dashboard is currently path-mounted at `https://surveyle.co.uk/admin/` (see the `Alias` block added to `surveyle.co.uk-le-ssl.conf`) since only a `surveyle.co.uk` TLS cert exists. `infra/ec2/admin/surveyle-admin.conf` is the reference vhost for moving it to its own `admin.surveyle.co.uk` subdomain once that DNS record and cert exist.
+
