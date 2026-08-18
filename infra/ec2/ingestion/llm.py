@@ -4,9 +4,10 @@ from specification.md section 3.3 so generated copy doesn't need a separate safe
 before admin review.
 """
 import json
-import os
 
 from openai import OpenAI
+
+from .db import load_env
 
 DEFAULT_MODEL = "gpt-4o-mini"
 
@@ -20,7 +21,9 @@ individuals."""
 
 class LLMClient:
     def __init__(self, api_key=None, model=DEFAULT_MODEL):
-        self.client = OpenAI(api_key=api_key or os.environ["OPENAI_API_KEY"])
+        # Same /etc/surveyle/surveyle.env convention as SupabaseClient.from_env(),
+        # rather than reading os.environ directly (that missed the env file entirely).
+        self.client = OpenAI(api_key=api_key or load_env()["OPENAI_API_KEY"])
         self.model = model
 
     def _json_completion(self, system, user):
