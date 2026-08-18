@@ -54,4 +54,29 @@ class ReviewTest extends TestCase
         self::assertSame([['round3_candidates', ['id' => 'eq.c1'], ['status' => 'rejected']]], $db->updates);
         self::assertSame('pending', $db->select('round3_candidates', ['id' => 'eq.c2'])[0]['status']);
     }
+
+    public function testStoryHeadlinesForLooksUpHeadlinesByStoryId(): void
+    {
+        $db = new FakeSupabaseClient(['canonical_stories' => [
+            ['id' => 's1', 'headline' => 'Wildfires spread across UK'],
+            ['id' => 's2', 'headline' => 'Hayden Panettiere dies aged 36'],
+        ]]);
+        $review = new Review($db, new FakeCandidateRegenerator());
+        $candidates = [
+            ['id' => 'c1', 'canonical_story_id' => 's1'],
+            ['id' => 'c2', 'canonical_story_id' => 's1'],
+            ['id' => 'c3', 'canonical_story_id' => 's2'],
+        ];
+
+        $headlines = $review->storyHeadlinesFor($candidates);
+
+        self::assertSame(['s1' => 'Wildfires spread across UK', 's2' => 'Hayden Panettiere dies aged 36'], $headlines);
+    }
+
+    public function testStoryHeadlinesForReturnsEmptyForNoCandidates(): void
+    {
+        $review = new Review(new FakeSupabaseClient([]), new FakeCandidateRegenerator());
+
+        self::assertSame([], $review->storyHeadlinesFor([]));
+    }
 }

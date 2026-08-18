@@ -9,6 +9,7 @@ use Surveyle\Admin\Auth;
 use Surveyle\Admin\CliCandidateRegenerator;
 use Surveyle\Admin\Editors;
 use Surveyle\Admin\Env;
+use Surveyle\Admin\GameDays;
 use Surveyle\Admin\Review;
 use Surveyle\Admin\SupabaseAuthClient;
 use Surveyle\Admin\SupabaseClient;
@@ -24,6 +25,7 @@ $review = new Review($db, $regenerator);
 $editors = new Editors($db);
 $winners = new Winners($db);
 $analytics = new Analytics($db);
+$gameDays = new GameDays($db);
 
 function require_admin(): void
 {

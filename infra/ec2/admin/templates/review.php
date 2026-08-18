@@ -6,15 +6,26 @@
 </form>
 <table>
   <thead>
-  <tr><th>Story</th><th>Variant</th><th>Type</th><th>Prompt</th><th>Winner?</th><th>Actions</th></tr>
+  <tr><th>Story</th><th>Variant</th><th>Type</th><th>Prompt</th><th>Options</th><th>Winner?</th><th>Actions</th></tr>
   </thead>
   <tbody>
   <?php foreach ($candidates as $candidate): ?>
     <tr>
-      <td><?= h($candidate['canonical_story_id']) ?></td>
+      <td><?= h($storyHeadlines[$candidate['canonical_story_id']] ?? $candidate['canonical_story_id']) ?></td>
       <td><?= h((string) $candidate['variant_order']) ?></td>
       <td><?= h($candidate['question_type']) ?></td>
       <td><?= h($candidate['prompt']) ?></td>
+      <td>
+        <?php if ($candidate['question_type'] === 'multiple_choice' && !empty($candidate['options'])): ?>
+          <ol>
+            <?php foreach ($candidate['options'] as $option): ?>
+              <li><?= h($option) ?></li>
+            <?php endforeach; ?>
+          </ol>
+        <?php else: ?>
+          &mdash; (0-100 slider)
+        <?php endif; ?>
+      </td>
       <td><?= ($winnerIdsByStory[$candidate['canonical_story_id']] ?? null) === $candidate['id'] ? 'Winner' : '' ?></td>
       <td>
         <form method="post" action="review.php">
@@ -27,7 +38,7 @@
     </tr>
   <?php endforeach; ?>
   <?php if ($candidates === []): ?>
-    <tr><td colspan="6">No pending candidates<?= $gameDayId !== null ? ' for that game day' : ' (enter a game day ID above)' ?>.</td></tr>
+    <tr><td colspan="7">No pending candidates<?= $gameDayId !== null ? ' for that game day' : ' (enter a game day ID above)' ?>.</td></tr>
   <?php endif; ?>
   </tbody>
 </table>

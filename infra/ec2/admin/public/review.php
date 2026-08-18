@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $candidates = $review->pendingCandidates($gameDayId);
+$storyHeadlines = $review->storyHeadlinesFor($candidates);
 $winnerIdsByStory = $gameDayId !== null ? $winners->winningCandidateIdsByStory($gameDayId) : [];
 
 include __DIR__ . '/../templates/review.php';

@@ -11,6 +11,7 @@
   <strong>Surveyle Admin</strong>
   <?php if (!empty($_SESSION['admin_user_id'])): ?>
     <nav>
+      <a href="game_days.php">Game Days</a>
       <a href="review.php">Review Queue</a>
       <a href="editors.php">Editors</a>
       <a href="analytics.php">Analytics</a>

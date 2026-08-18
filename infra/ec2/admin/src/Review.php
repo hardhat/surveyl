@@ -26,6 +26,21 @@ class Review
         return $this->db->select('round3_candidates', $params);
     }
 
+    /** @return array<string, string> canonical_story_id => headline, for display */
+    public function storyHeadlinesFor(array $candidates): array
+    {
+        $storyIds = array_unique(array_column($candidates, 'canonical_story_id'));
+        if ($storyIds === []) {
+            return [];
+        }
+        $stories = $this->db->select('canonical_stories', ['id' => 'in.(' . implode(',', $storyIds) . ')']);
+        $headlines = [];
+        foreach ($stories as $story) {
+            $headlines[$story['id']] = $story['headline'];
+        }
+        return $headlines;
+    }
+
     public function approve(string $candidateId): array
     {
         $rows = $this->db->update('round3_candidates', ['id' => "eq.{$candidateId}"], ['status' => 'approved']);
