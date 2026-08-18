@@ -14,4 +14,4 @@ SURVEYLE_HOME=/opt/surveyle
 */15 6-23 * * * cd $SURVEYLE_HOME && venv/bin/python -m infra.ec2.ingestion.run_daily late-check >> /var/log/surveyle/ingestion.log 2>&1
 
 # Existing Supabase keep-alive heartbeat.
-*/20 * * * * venv/bin/python $SURVEYLE_HOME/infra/ec2/heartbeat.py >> /var/log/surveyle/heartbeat.log 2>&1
+0 */6 * * * cd $SURVEYLE_HOME && venv/bin/python infra/ec2/heartbeat.py >> /var/log/surveyle/heartbeat.log 2>&1

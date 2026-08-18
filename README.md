@@ -100,25 +100,17 @@ Only proceed to the deploy steps below once both suites are green and (for admin
 
 ### Deploying
 
-The EC2 host doesn't currently have a GitHub deploy key configured, so today's deploy procedure is an additive `rsync` of the working tree (never `--delete`, to avoid clobbering anything already on the host that isn't tracked in this repo, e.g. the standalone `heartbeat.py` cron job). Once a read-only deploy key is added to the repo and to the host's `~/.ssh`, prefer switching this to `git pull` on the server for a fully reproducible deploy.
+`/opt/surveyle` on the EC2 host is a real git checkout of this repo, pulled over SSH using a **read-only** deploy key (`~/.ssh/surveyle_deploy_ed25519` on the host, added under the repo's Settings -> Deploy keys with "Allow write access" left unchecked) via the `github-surveyle` SSH config alias. That key can only fetch this one repo -- it can't push, and it isn't valid for any other GitHub repo.
 
 ```bash
-# 1. Make sure both test suites pass locally (see "Local staging" above).
+# 1. Make sure both test suites pass locally (see "Local staging" above), commit,
+# and push to origin/main -- deploys always pull from origin/main, never from a
+# local working tree.
 
-# 2. Sync the repo to the server additively (no --delete).
-rsync -avz \
-  --exclude='.git' --exclude='venv' --exclude='.venv' --exclude='node_modules' \
-  --exclude='__pycache__' --exclude='*/__pycache__' --exclude='.pytest_cache' \
-  --exclude='.phpunit.result.cache' --exclude='infra/supabase/.temp' \
-  -e ssh --rsync-path="sudo rsync" \
-  ./ ubuntu@surveyle.co.uk:/opt/surveyle/
+# 2. Pull the latest commit onto the server.
+ssh ubuntu@surveyle.co.uk 'cd /opt/surveyle && git pull --ff-only origin main'
 
-# 3. First deploy only: create the venv and install ingestion deps.
-ssh ubuntu@surveyle.co.uk '
-  cd /opt/surveyle && python3 -m venv venv &&
-  venv/bin/pip install -q -r infra/ec2/requirements.txt
-'
-# Later deploys, if requirements.txt changed:
+# 3. Only if requirements.txt changed:
 ssh ubuntu@surveyle.co.uk 'cd /opt/surveyle && venv/bin/pip install -q -r infra/ec2/requirements.txt'
 
 # 4. Re-run both suites on the server itself as a final sanity check.
@@ -131,9 +123,11 @@ ssh ubuntu@surveyle.co.uk '
 # 5. Apache config only needs touching when infra/ec2/admin/surveyle-admin.conf
 # (or the Alias block in /etc/apache2/sites-available/surveyle.co.uk-le-ssl.conf)
 # changes -- otherwise step 2 alone is enough, since PHP is interpreted directly
-# from the synced files and Apache doesn't need a reload for code-only changes.
+# from the pulled files and Apache doesn't need a reload for code-only changes.
 ssh ubuntu@surveyle.co.uk 'sudo apache2ctl configtest && sudo systemctl reload apache2'
 ```
+
+`git pull --ff-only` deliberately refuses instead of merging/rebasing if the server's checkout ever diverges from origin (e.g. someone hand-edited a file on the host) -- investigate and reconcile manually rather than forcing it. The one file intentionally outside this checkout is the standalone `/opt/surveyle/heartbeat.py` + its own crontab entry, both untracked leftovers from before this repo's `infra/ec2/` layout existed; leave them alone unless asked to migrate them.
 
 The admin dashboard is currently path-mounted at `https://surveyle.co.uk/admin/` (see the `Alias` block added to `surveyle.co.uk-le-ssl.conf`) since only a `surveyle.co.uk` TLS cert exists. `infra/ec2/admin/surveyle-admin.conf` is the reference vhost for moving it to its own `admin.surveyle.co.uk` subdomain once that DNS record and cert exist.
 
