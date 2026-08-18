@@ -13,9 +13,10 @@ and depend on third-party services:
   wired in, and the 10% weight keeps its influence small either way.
 """
 import logging
-import os
 
 import requests
+
+from .db import load_env
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,10 @@ def search_spike_score(query, date="now 1-d", geo="GB", api_key=None):
     data, missing key, or timeout) rather than raising, since this is a best-effort
     secondary ranking signal.
     """
-    api_key = api_key or os.environ.get("SERPAPI_API_KEY") or os.environ.get("PYTRENDS_API_KEY")
+    # Same /etc/surveyle/surveyle.env convention as SupabaseClient.from_env()/LLMClient,
+    # rather than reading os.environ directly (that missed the env file entirely).
+    env = load_env()
+    api_key = api_key or env.get("SERPAPI_API_KEY") or env.get("PYTRENDS_API_KEY")
     if not api_key:
         logger.warning("search_spike_score: no SerpApi key configured, returning 0.0")
         return 0.0
