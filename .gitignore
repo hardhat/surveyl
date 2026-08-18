@@ -4,3 +4,4 @@ venv/
 .venv/
 infra/supabase/.temp/
 node_modules/
+.phpunit.result.cache

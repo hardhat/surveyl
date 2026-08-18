@@ -1,0 +1,11 @@
+body { font-family: system-ui, sans-serif; margin: 0; color: #1b1b1b; background: #fafafa; }
+.topbar { display: flex; align-items: center; gap: 1.5rem; padding: 0.75rem 1.5rem; background: #1b1b3a; color: #fff; }
+.topbar nav a { color: #fff; margin-right: 1rem; text-decoration: none; }
+.topbar nav a:hover { text-decoration: underline; }
+main { padding: 1.5rem; max-width: 960px; margin: 0 auto; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+th, td { border: 1px solid #ddd; padding: 0.5rem; text-align: left; vertical-align: top; }
+th { background: #eee; }
+form.filter { margin-bottom: 1rem; }
+textarea { width: 100%; min-height: 3rem; }
+.error { color: #b00020; }

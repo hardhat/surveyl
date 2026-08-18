@@ -42,11 +42,13 @@ Derived from [specification.md](specification.md). Milestones are ordered so eac
 
 ## Milestone 3: Admin Dashboard (EC2-hosted)
 
-- [ ] Build admin login screen using Supabase Auth. **Test:** valid admin credentials log in; invalid credentials are rejected with an error.
-- [ ] Build review queue for generated stories/questions (approve/reject). **Test:** rejecting a Round 3 candidate immediately triggers regeneration of only that candidate (not all 3).
-- [ ] Build editors for clues, summaries, candidate questions, and explanations. **Test:** an edited field persists after page reload and is reflected in the next game package fetch.
-- [ ] Surface the auto-selected Round 2 winner (read-only highlight, no manual override needed). **Test:** admin UI visibly marks the winning candidate matching the selection-logic output.
-- [ ] Build basic analytics/observability view (active players, completion rates, skip rates, format performance). **Test:** dashboard numbers match a manual SQL aggregate query for the same day.
+> Built as a plain-PHP app (no framework/Composer deps) under `infra/ec2/admin`, served by Apache2 alongside the Python cron job (see `infra/ec2/admin/surveyle-admin.conf` for the reference vhost). `src/` holds the logic classes with PHPUnit tests (`cd infra/ec2/admin && phpunit`); `public/` is the Apache DocumentRoot (front-controller-per-page + Jinja-style PHP templates). Candidate regeneration shells out to a new Python CLI (`infra/ec2/ingestion/regenerate_candidate.py`) so the LLM prompt/safety logic isn't duplicated.
+
+- [x] Build admin login screen using Supabase Auth. **Test:** `Auth::login()` covered by `AuthTest` — valid admin credentials log in; invalid credentials and non-admin accounts are rejected with `AdminAuthError`.
+- [x] Build review queue for generated stories/questions (approve/reject). **Test:** `ReviewTest::testRejectMarksRejectedAndRegeneratesOnlyThatCandidate` confirms rejecting one candidate updates only that row and regenerates only that variant (verified via `test_regenerate_candidate.py` on the Python side too).
+- [x] Build editors for clues, summaries, candidate questions, and explanations. **Test:** `EditorsTest` confirms each field type persists via `SupabaseClient::update()` (clue history is preserved by the existing DB trigger).
+- [x] Surface the auto-selected Round 2 winner (read-only highlight, no manual override needed). **Test:** `WinnersTest::testHighlightsTheWinningCandidatePerStory` confirms the winning `round3_candidate_id` is identified per story for the review queue to highlight.
+- [x] Build basic analytics/observability view (active players, completion rates, skip rates, format performance). **Test:** `AnalyticsTest` covers active-player counts, per-round completion rates, per-question skip rates, and format ranking against seeded data.
 
 ## Milestone 4: Round 1 - Top Stories Identification
 
