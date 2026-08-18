@@ -52,8 +52,12 @@ def search_spike_score(query, date="now 1-d", geo="GB", api_key=None):
         response = requests.get(SERPAPI_URL, params=params, timeout=SERPAPI_TIMEOUT_SECONDS)
         response.raise_for_status()
         data = response.json()
-    except (requests.RequestException, ValueError):
-        logger.exception("search_spike_score failed for query=%r", query)
+    except (requests.RequestException, ValueError) as exc:
+        # Don't log str(exc)/logger.exception here: requests' HTTPError message embeds
+        # the full request URL, which includes api_key as a query param -- that would
+        # leak the SerpApi key into ingestion.log.
+        status = getattr(getattr(exc, "response", None), "status_code", None)
+        logger.warning("search_spike_score: request failed for query=%r (HTTP %s)", query, status)
         return 0.0
 
     interest = data.get("interest_over_time", {})
