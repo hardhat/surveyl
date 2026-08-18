@@ -16,7 +16,7 @@ import logging
 from datetime import date, timedelta
 
 from . import clues, fallback, promotion, round3_questions, selection
-from .clustering import cluster_articles
+from .clustering import cluster_by_embeddings
 from .config import ROUND1_DECOY_COUNT, ROUND3_STORY_COUNT
 from .db import SupabaseClient
 from .llm import LLMClient
@@ -34,12 +34,14 @@ def get_or_create_game_day(db, game_date):
     return db.insert("game_days", [{"game_date": game_date.isoformat(), "status": "draft"}])[0]
 
 
-def _materialize_clusters(db, game_date, raw_articles):
+def _materialize_clusters(db, llm, game_date, raw_articles):
     """Clusters raw articles, writes one canonical_stories row per cluster, links each
     raw_stories row back to it, and returns the canonical stories annotated with
     coverage_volume (cluster size) for ranking.
     """
-    clusters = cluster_articles(raw_articles)
+    embedding_texts = [f"{a['headline']}. {a.get('article_text') or ''}".strip() for a in raw_articles]
+    embeddings = llm.generate_embeddings(embedding_texts)
+    clusters = cluster_by_embeddings(raw_articles, embeddings)
     stories = []
     for cluster in clusters:
         representative = cluster[0]
@@ -71,7 +73,7 @@ def assemble(db, llm, game_date):
         logger.warning("no raw articles fetched for %s; leaving game_day in draft for fallback", game_date)
         return today_game_day
 
-    stories = _materialize_clusters(db, game_date, raw_articles)
+    stories = _materialize_clusters(db, llm, game_date, raw_articles)
     stories = _attach_signals(stories)
     ranked = rank_stories(stories)
 

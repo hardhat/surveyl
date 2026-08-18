@@ -10,6 +10,9 @@ from openai import OpenAI
 from .db import load_env
 
 DEFAULT_MODEL = "gpt-4o-mini"
+# Used for embeddings-based story clustering (see clustering.cluster_by_embeddings);
+# a dedicated embeddings model, not the chat model above.
+EMBEDDING_MODEL = "text-embedding-3-small"
 
 _SAFETY_RULES = """You write mildly cheeky copy for a daily UK news game called Surveyle.
 Avoid: making light of active mass-casualty events, sexual crimes, child harm, personal
@@ -36,6 +39,13 @@ class LLMClient:
             ],
         )
         return json.loads(response.choices[0].message.content)
+
+    def generate_embeddings(self, texts):
+        """Returns one embedding vector (list[float]) per input text, same order --
+        used for embeddings-based story clustering (spec 12.4).
+        """
+        response = self.client.embeddings.create(model=EMBEDDING_MODEL, input=texts)
+        return [item.embedding for item in response.data]
 
     def generate_clue(self, headline, summary, clue_type):
         """Returns the clue content string for the given clue_type (one of
